@@ -126,6 +126,8 @@ def init_acous_feats(soundObj, beg_time, end_time, params=None, acous=['f0','F1'
     '''Initialize acoustic feature objects using parselmouth (Praat backend)
     Note the case of the alphabet prefix (lower: pitch, upper: formants)
     '''
+    err_flag = None
+
     # Extract part
     window_shape = 'rectangular'
     relative_width = 1.0
@@ -151,12 +153,17 @@ def init_acous_feats(soundObj, beg_time, end_time, params=None, acous=['f0','F1'
                       params['max_formants'], 
                       params['window_length'], 
                       params['pre_emphasis'])
-        fmtTrackObj = call(fmtObj, "Track...", params['num_formants'], 
-                           params['F1'], params['F2'], params['F3'], params['F4'], params['F5'], 
-                           params['freqcost'], params['bwcost'], params['transcost'])
+        try:
+            fmtTrackObj = call(fmtObj, "Track...", params['num_formants'], 
+                            params['F1'], params['F2'], params['F3'], params['F4'], params['F5'], 
+                            params['freqcost'], params['bwcost'], params['transcost'])
+        except Exception as e:
+            # Errors mostly come from formant tracking
+            # eg. selected intervals do not include formants at all
+            err_flag = e.args[0]
     # Pitch object
     if 'f' in [val[0] for val in acous]:
         pitchObj = call(soundObjPart, 'To Pitch', 0, params['min_f0'], params['max_f0'])
         pitchObj = call(pitchObj, 'Down to PitchTier')
 
-    return fmtTrackObj, pitchObj
+    return fmtTrackObj, pitchObj, err_flag

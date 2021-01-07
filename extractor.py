@@ -70,7 +70,7 @@ def check_arguments(args, verbose=False):
 
 def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
             field_names, channel_names, audio_channel, header_names, 
-            result_file=None, skip_nans=False):
+            result_file=None, skip_nans=False, write_log=True):
     '''Extract articulatory and acoustic features for a single file
     Parameters
     ----------
@@ -87,7 +87,11 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
         header_names: table header for the output result file
         result_file: (optional) output file name; eg. result/F01.csv
         skip_nans: if False (default), it will throw an error when NaNs are found
+        write_log: if True (default), it will write a log file
     '''
+    # Initialize log data
+    logs = []
+
     # Load data dictionary
     D = load_dictionary(datafile, field_names, channel_names, audio_channel)
     ema_sr = D['TR']['SRATE']
@@ -119,7 +123,9 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
     _phones, _p_times = D['AUDIO']['PHONES']['LABEL'], D['AUDIO']['PHONES']['OFFS']
     _words, _w_times = D['AUDIO']['WORDS']['LABEL'], D['AUDIO']['WORDS']['OFFS']
     p_idx = [i for i, p in enumerate(_phones) if p in vowels]
-    assert len(p_idx) > 0, f'No phones {vowels} were matching'
+    if len(p_idx) == 0:
+        logs += [','.join([fid, '_', '_', '_', f'No phones {vowels} were matching'])]
+        return None, logs
     phones, p_times = [_phones[i] for i in p_idx], _p_times[p_idx,:]
     w_idx = [i for i, (beg, end) in enumerate(_w_times) 
            if len(np.where((p_times.mean(axis=1)<end) * (p_times.mean(axis=1)>beg))[0])]
@@ -143,44 +149,54 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
         duration = p_time[1] - p_time[0]
         percents = np.linspace(0, 1, n_points) # time --> percent point
         ticks = [float(p_time[0] + duration * t) for t in percents]
-        fmtTrackObj, pitchObj = init_acous_feats(soundObj, p_time[0]-margin, p_time[1]+margin, 
+        fmtTrackObj, pitchObj, error_flag = init_acous_feats(soundObj, p_time[0]-margin, p_time[1]+margin, 
             params=params, acous=acous, do_resample=True)
 
         # --- Iterate over time points
-        for j, (perc, tick) in enumerate(zip(percents, ticks)):
-            # Extract acoustic features
-            acous_data = []
-            if 'f0' in header:
-                acous_data += [call(pitchObj, 'Get value at time...', tick)]
-            if 'F1' in header:
-                acous_data += [call(fmtTrackObj, 'Get value at time...', 1, tick, 'hertz', 'Linear')]
-            if 'F2' in header:
-                acous_data += [call(fmtTrackObj, 'Get value at time...', 2, tick, 'hertz', 'Linear')]
-            if 'F3' in header:
-                acous_data += [call(fmtTrackObj, 'Get value at time...', 3, tick, 'hertz', 'Linear')]
-            if 'F4' in header:
-                acous_data += [call(fmtTrackObj, 'Get value at time...', 4, tick, 'hertz', 'Linear')]
+        if error_flag is None:
+            for j, (perc, tick) in enumerate(zip(percents, ticks)):
+                # Extract acoustic features
+                acous_data = []
+                if 'f0' in header:
+                    acous_data += [call(pitchObj, 'Get value at time...', tick)]
+                if 'F1' in header:
+                    acous_data += [call(fmtTrackObj, 'Get value at time...', 1, tick, 'hertz', 'Linear')]
+                if 'F2' in header:
+                    acous_data += [call(fmtTrackObj, 'Get value at time...', 2, tick, 'hertz', 'Linear')]
+                if 'F3' in header:
+                    acous_data += [call(fmtTrackObj, 'Get value at time...', 3, tick, 'hertz', 'Linear')]
+                if 'F4' in header:
+                    acous_data += [call(fmtTrackObj, 'Get value at time...', 4, tick, 'hertz', 'Linear')]
 
-            # Extract articulatory features
-            artic_data = []
-            sample_idx = round(tick * ema_sr)
-            xz_idx = [0,2]
-            for arc in [artic_dict[c] for c in artic]:
-                x, z = D[arc]['SIGNAL'][sample_idx, xz_idx]
-                artic_data += [x, z]
+                # Extract articulatory features
+                artic_data = []
+                sample_idx = round(tick * ema_sr)
+                xz_idx = [0,2]
+                for arc in [artic_dict[c] for c in artic]:
+                    x, z = D[arc]['SIGNAL'][sample_idx, xz_idx]
+                    artic_data += [x, z]
 
-            # Update
-            row_data = [fid, spkr, block, rate, sent, rep, w_label, 
-                        prevowel, p_label, postvowel, duration, perc, tick]
-            row_data += acous_data
-            row_data += artic_data
-            df.loc[irow] = row_data
-            irow += 1
+                # Update
+                row_data = [fid, spkr, block, rate, sent, rep, w_label, 
+                            prevowel, p_label, postvowel, duration, perc, tick]
+                row_data += acous_data
+                row_data += artic_data
+                df.loc[irow] = row_data
+                irow += 1
+        else:
+            logs += [','.join([fid, str(p_time[0]), p_label, w_label, error_flag])]
+
     if result_file is not None:
         df.to_csv(result_file, index=False)
+        if write_log:
+            log_file = re.sub('csv', 'log', result_file)
+            with open(log_file, 'wt') as f:
+                for line in logs:
+                    f.write(line+'\n')
     if not skip_nans:
         assert len(check_nan(df)) == 0, f'NaNs were found ({len(check_nan(df))} rows)'
-    return df
+    
+    return df, logs
 
 def run(args):
     '''Run the extractor'''
@@ -199,15 +215,18 @@ def run(args):
         result_file = os.path.join('result', f'{fid}.csv')
         df = extract(args.DATAFILE, args.acous, args.artic, artic_dict, args.ref, args.vowel, args.n_points,
                      field_names, channel_names, audio_channel, header, 
-                     result_file, args.skip_nans)
+                     result_file=result_file, skip_nans=args.skip_nans, write_log=args.write_log)
     else:
         # --- for multiple files
         dfs = []
         pkl_files = sorted(glob(os.path.join(args.DATAFILE, '*.pkl')))
-        for pkl_file in tqdm(pkl_files, desc=f'Result: {args.OUTFILE}', total=len(pkl_files)): 
-            df = extract(pkl_file, args.acous, args.artic, artic_dict, args.ref, args.vowel, args.n_points,
-                         field_names, channel_names, audio_channel, header, result_file=None)
-            dfs += [df]
+        basename = os.path.basename(args.OUTFILE)
+        for pkl_file in tqdm(pkl_files, desc=f'Result: {basename}', ascii=True, total=len(pkl_files)): 
+            df, logs = extract(pkl_file, args.acous, args.artic, artic_dict, args.ref, args.vowel, args.n_points,
+                               field_names, channel_names, audio_channel, header, 
+                               result_file=None, skip_nans=args.skip_nans, write_log=args.write_log)
+            if df is not None:
+                dfs += [df]
         pd.concat(dfs).to_csv(args.OUTFILE, index=False)
 
 if __name__ == '__main__':
@@ -230,6 +249,8 @@ if __name__ == '__main__':
                         help='Specify a formant reference file for accurate tracking')
     parser.add_argument('--skip_nans', type=bool, required=False, default=False,
                         help='If False (default), it will throw errors on NaNs')
+    parser.add_argument('--write_log', type=bool, required=False, default=False,
+                        help='if True (default: False), it will write a log file {OUTFILE}.log')
     args = parser.parse_args()
     args = check_arguments(args, verbose=True)
 
