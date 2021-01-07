@@ -48,7 +48,8 @@ An example of using this procedure:
                         --acous f0,f1,f2,f3 \
                         --n_points 5 \
                         --ref example/reference_formants.xlsx \
-                        --skip_nans False
+                        --skip_nans False \
+                        --write_log True
 
     # For multiple files, you can specify the directory name instead of file name at DATAFILE
 
@@ -74,6 +75,9 @@ An example of using this procedure:
     #   --ref REF             Specify a formant reference file for accurate tracking
     #   --skip_nans SKIP_NANS
     #                         If False (default), it will throw errors on NaNs
+    #   --write_log WRITE_LOG
+    #                         if True (default: False), it will write a log file
+    #                         {OUTFILE}.log
     ```
 - (3) Check features
     ```python

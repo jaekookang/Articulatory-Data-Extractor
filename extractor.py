@@ -188,7 +188,7 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
 
     if result_file is not None:
         df.to_csv(result_file, index=False)
-        if write_log:
+        if args.write_log:
             log_file = re.sub('csv', 'log', result_file)
             with open(log_file, 'wt') as f:
                 for line in logs:
@@ -219,15 +219,23 @@ def run(args):
     else:
         # --- for multiple files
         dfs = []
+        logs = []
         pkl_files = sorted(glob(os.path.join(args.DATAFILE, '*.pkl')))
         basename = os.path.basename(args.OUTFILE)
         for pkl_file in tqdm(pkl_files, desc=f'Result: {basename}', ascii=True, total=len(pkl_files)): 
-            df, logs = extract(pkl_file, args.acous, args.artic, artic_dict, args.ref, args.vowel, args.n_points,
+            df, log = extract(pkl_file, args.acous, args.artic, artic_dict, args.ref, args.vowel, args.n_points,
                                field_names, channel_names, audio_channel, header, 
                                result_file=None, skip_nans=args.skip_nans, write_log=args.write_log)
+            logs += [log]
             if df is not None:
                 dfs += [df]
+        # Save
         pd.concat(dfs).to_csv(args.OUTFILE, index=False)
+        if args.write_log & (len(sum(logs, [])) > 0):
+            log_file = re.sub('csv', 'log', args.OUTFILE)
+            with open(log_file, 'wt') as f:
+                for line in logs:
+                    f.write(line+'\n')
 
 if __name__ == '__main__':
     # Parse arguments
