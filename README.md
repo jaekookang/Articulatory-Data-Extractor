@@ -1,5 +1,7 @@
 # Articulatory data extractor
 
+![top](https://raw.githubusercontent.com/jaekookang/Articulatory-Data-Extractor/master/png/top.png)
+
 This repository includes a procedure for extracting articulatory features with the corresponding acoustic features from the electromagnetic articulography (EMA) dataset. Currenetly, this procedure is only optimized for the Haskins IEEE EMA dataset ([Link](https://yale.app.box.com/s/cfn8hj2puveo65fq54rp1ml2mk7moj3h)). Support for different datasets will be considered if necessary.
 
 - Features
