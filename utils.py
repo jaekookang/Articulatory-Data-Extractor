@@ -160,7 +160,7 @@ def init_acous_feats(soundObj, beg_time, end_time, params=None, acous=['f0','F1'
         except Exception as e:
             # Errors mostly come from formant tracking
             # eg. selected intervals do not include formants at all
-            err_flag = e.args[0]
+            err_flag = e.args[0].strip('\n')
     # Pitch object
     if 'f' in [val[0] for val in acous]:
         pitchObj = call(soundObjPart, 'To Pitch', 0, params['min_f0'], params['max_f0'])

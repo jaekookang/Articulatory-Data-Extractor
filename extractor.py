@@ -234,7 +234,7 @@ def run(args):
         if args.write_log & (len(sum(logs, [])) > 0):
             log_file = re.sub('csv', 'log', args.OUTFILE)
             with open(log_file, 'wt') as f:
-                for line in logs:
+                for line in sum(logs, []):
                     f.write(line+'\n')
 
 if __name__ == '__main__':
