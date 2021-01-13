@@ -87,6 +87,7 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
         header_names: table header for the output result file
         result_file: (optional) output file name; eg. result/F01.csv
         skip_nans: if False (default), it will throw an error when NaNs are found
+                   if True, it will ignore NaNs, but NaNs will removed from the result file
         write_log: if True (default), it will write a log file
     '''
     # Initialize log data
@@ -194,7 +195,11 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
                 for line in logs:
                     f.write(line+'\n')
     if not skip_nans:
+        # Throw error on NaNs
         assert len(check_nan(df)) == 0, f'NaNs were found ({len(check_nan(df))} rows)'
+    else:
+        # Drop NaNs silently & reset index
+        df.dropna(inplace=True).reset_index(drop=True)
     
     return df, logs
 
