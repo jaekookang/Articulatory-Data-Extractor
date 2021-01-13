@@ -88,7 +88,8 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
         result_file: (optional) output file name; eg. result/F01.csv
         skip_nans: if False (default), it will throw an error when NaNs are found
                    if True, it will ignore NaNs, but NaNs will removed from the result file
-        write_log: if True (default), it will write a log file
+        write_log: if True (default), it will write a log file, 
+                   but log file will be written only if errors are found
     '''
     # Initialize log data
     logs = []
@@ -199,7 +200,8 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
         assert len(check_nan(df)) == 0, f'NaNs were found ({len(check_nan(df))} rows)'
     else:
         # Drop NaNs silently & reset index
-        df.dropna(inplace=True).reset_index(drop=True)
+        df.dropna(inplace=True)
+        df.reset_index(drop=True, inplace=True)
     
     return df, logs
 
@@ -263,7 +265,8 @@ if __name__ == '__main__':
     parser.add_argument('--skip_nans', type=bool, required=False, default=False,
                         help='If False (default), it will throw errors on NaNs')
     parser.add_argument('--write_log', type=bool, required=False, default=False,
-                        help='if True (default: False), it will write a log file {OUTFILE}.log')
+                        help='if True (default: False), it will write a log file {OUTFILE}.log ' + \
+                            'only if there are errors')
     args = parser.parse_args()
     args = check_arguments(args, verbose=True)
 

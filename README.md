@@ -77,7 +77,7 @@ An example of using this procedure:
     #                         If False (default), it will throw errors on NaNs
     #   --write_log WRITE_LOG
     #                         if True (default: False), it will write a log file
-    #                         {OUTFILE}.log
+    #                         {OUTFILE}.log only if there are errors
     ```
 - (3) Check features
     ```python
