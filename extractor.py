@@ -118,6 +118,7 @@ def extract(datafile, acous, artic, artic_dict, ref_file, vowels, n_points,
     header += [col.upper() if col != 'f0' else col for col in acous]
     header += [artic_dict[col]+c for col in artic for c in ['x','z']] # TR --> TRx, TRz
     params = init_acous_params()
+    ref = None
     if ref_file is not None:
         ref = pd.read_excel(ref_file)
 

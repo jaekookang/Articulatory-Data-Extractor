@@ -8,6 +8,7 @@ This script validates the result file created from extractor.py
 # Basic
 import os
 import pickle
+import math
 import argparse
 import numpy as np
 import librosa.display
@@ -43,47 +44,60 @@ def check_arguments(args, verbose=True):
     return args
 
 
-def plot_wav(ax, sig, sr):
+def plot_wav(ax, sig, sr, decimal=2):
     '''Plot waveform'''
     n_ticks = 5
     librosa.display.waveplot(sig, sr=sr, ax=ax, x_axis='none')
+    xmax = len(sig)/sr
+    # Round up from hundredths place
+    multiplier = 10 ** decimal
+    xmax = math.ceil(xmax * multiplier) / multiplier
+    ax.set_xlim([0, xmax])
 
     ax.set_xlabel('')
-    xticks = np.linspace(0, len(sig)/sr, n_ticks)
+    xticks = np.linspace(0, xmax, n_ticks)
     ax.xaxis.set_ticks(xticks)
     ax.set_xticklabels([f'{t:.2f}' for t in xticks])
     return ax
 
 
-def plot_specgram(ax, sig, sr):
+def plot_specgram(ax, sig, sr, decimal=2):
     '''Plot spectrogram'''
     n_ticks = 5
     cut_off = 5500
+    xmax = len(sig)/sr
     S = librosa.stft(sig)
     S_db = librosa.amplitude_to_db(abs(S))
     librosa.display.specshow(S_db, sr=sr, x_axis='time', y_axis='hz', ax=ax, cmap='gray_r')
 
     ax.set_ylim([0, cut_off])
     ax.set_xlabel('')
-    ax.set_xticks([])
+    # Round up from hundredths place
+    multiplier = 10 ** decimal
+    xmax = math.ceil(xmax * multiplier) / multiplier
+    ax.set_xlim([0, xmax])
     return ax
 
 
-def plot_artic_trajectory(arr, D, channel_names):
+def plot_artic_trajectory(arr, D, channel_names, decimal=2):
     '''Plot articulatory trajectories'''
     x_idx = 0
     z_idx = 2
     n_ticks = 5
+    sig = D['AUDIO']['SIGNAL']
+    sr = D['AUDIO']['SRATE']
+    xmax = len(sig) / sr
     ema_sr = int(D['TR']['SRATE'])
     for ax, ch in zip(arr, channel_names):
         data = D[ch]['SIGNAL']
         ax.plot(data[:, x_idx],  '-', color='gray', label='x')
         ax.plot(data[:, z_idx], '--', color='k',  label='y')
 
-        ax.set_xlim([0, len(data)])
+        xtmax = xmax * len(data)/(len(data)/ema_sr)
+        ax.set_xlim([0, xtmax])
         ax.legend(loc='upper right')
         ax.set_ylabel(ch, fontsize=10)
-        xticks = np.linspace(0, len(data), n_ticks)
+        xticks = np.linspace(0, xtmax, n_ticks)
         ax.xaxis.set_ticks(xticks)
         ax.set_xticklabels([f'{t/ema_sr:.2f}' for t in xticks])
         ax.xaxis.set_ticks_position('none') 
@@ -116,7 +130,7 @@ def add_artic_points(ax, df, ema_sr, ch, channel_names):
     artic_col = [ch+c for ch in channel_names for c in ['x','z']]
     cols = df.columns.to_list()
     for i, time in enumerate(df.TimeSec.values):
-        seg = int(time * ema_sr)    
+        seg = round(time * ema_sr)    
         ax.plot([seg, seg], [vmax[0], vmax[1]], '--', 
                 color='gray', linewidth=0.5, alpha=0.5)
         x, z = df[ch+'x'].iloc[i], df[ch+'z'].iloc[i]
