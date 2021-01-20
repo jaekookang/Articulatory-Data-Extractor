@@ -180,7 +180,6 @@ def run(args):
     fig.tight_layout(h_pad=-1)
     fig.savefig(png_file)
     plt.close()
-    print('Done')
 
 
 if __name__ == '__main__':
