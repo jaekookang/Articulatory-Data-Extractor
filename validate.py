@@ -130,6 +130,7 @@ def run(args):
     channel_names = ['TR', 'TB', 'TT', 'JAW', 'UL', 'LL']
     audio_channel = 'AUDIO'
     fid, speaker, block, sentence, repetition, rate = parse_ieee_filename(args.fileid)
+    png_file = args.PNGFILE
 
     D = load_dictionary(args.DATAFILE, field_names, channel_names, audio_channel)
     sig, sr = D['AUDIO']['SIGNAL'], int(D['AUDIO']['SRATE'])
@@ -163,7 +164,8 @@ def run(args):
     # Prettify
     fig.suptitle(args.fileid, fontsize=15)
     fig.tight_layout(h_pad=-1)
-    plt.show()
+    fig.savefig(png_file)
+    plt.close()
     print('Done')
 
 
@@ -175,6 +177,8 @@ if __name__ == '__main__':
                         help='Specify the result file created from extractor.py (*.csv)')
     parser.add_argument('DATAFILE', type=str,
                         help='Specify the data file (*.pkl)')
+    parser.add_argument('PNGFILE', type=str,
+                        help='Specify the output png file w/ path; "out.png"')
     parser.add_argument('--fileid', type=str, required=True,
                         help='Specify fileid; eg. F01_B01_S01_R01_N')
     args = parser.parse_args()

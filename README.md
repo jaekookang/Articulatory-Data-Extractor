@@ -81,19 +81,25 @@ An example of using this procedure:
     ```
 - (3) Check features
     ```python
-    python validate.py --fileid F01_B01_S01_R01_N result/result.csv example/F01_B01_S01_R01_N.pkl 
+    python validate.py result/result.csv \
+                       example/F01_B01_S01_R01_N.pkl \
+                       result/F01_B01_S01_R01_N.png \
+                       --fileid F01_B01_S01_R01_N
 
-    #usage: validate.py [-h] --fileid FILEID RESULTFILE DATAFILE
+    #usage: validate.py [-h] --fileid FILEID RESULTFILE DATAFILE PNGFILE
     #
     #Validate the result file from extractor.py
     #
     #positional arguments:
-    #  RESULTFILE       Specify the result file created from extractor.py (*.csv)
-    #  DATAFILE         Specify the data file (*.pkl)
+    #RESULTFILE       Specify the result file created from extractor.py (*.csv)
+    #DATAFILE         Specify the data file (*.pkl)
+    #PNGFILE          Specify the output png file w/ path; "out.png"
     #
     #optional arguments:
-    #  -h, --help       show this help message and exit
-    #  --fileid FILEID  Specify fileid; eg. F01_B01_S01_R01_N    
+    #-h, --help       show this help message and exit
+    #--fileid FILEID  Specify fileid; eg. F01_B01_S01_R01_N
+    #
+    #See https://github.com/jaekookang/Articulatory-Data-Extractor   
     ```
     - For example
     ![validate.png](https://raw.githubusercontent.com/jaekookang/Articulatory-Data-Extractor/master/png/validate.png)
