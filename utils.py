@@ -96,7 +96,7 @@ def resample(soundObj, target_sampling_rate, precision_ms=50):
 
 def init_acous_params(time=None,F1=500,F2=1485,F3=2450,F4=4000,F5=4950,
                         window_length=0.045, step_size=0.002, 
-                        num_formants=3, max_formants=5500,
+                        num_formants=3, max_formants=5000,
                         max_num_formants=5, pre_emphasis=50,
                         freqcost=1, bwcost=1, transcost=1):
     '''Initialize formant tracking parameters'''
